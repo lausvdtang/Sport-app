@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Lesdag Dashboard — inloggen</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f6f3ec;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      color: #1c1c1c;
+      padding: 1.5rem;
+    }
+    .card {
+      width: 100%;
+      max-width: 320px;
+      background: #fffdf8;
+      border: 1px solid #e0d9c9;
+      border-radius: 14px;
+      padding: 2rem 1.75rem;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, .06);
+      text-align: center;
+    }
+    h1 {
+      margin: 0 0 .35rem;
+      font-size: 1.2rem;
+    }
+    p.sub {
+      margin: 0 0 1.5rem;
+      color: #6b6b6b;
+      font-size: .9rem;
+    }
+    input {
+      width: 100%;
+      padding: .65rem .8rem;
+      font-size: 1rem;
+      border: 1px solid #d8d2c2;
+      border-radius: 8px;
+      background: #fff;
+      text-align: center;
+      letter-spacing: .05em;
+    }
+    input:focus-visible {
+      outline: 2px solid #2f6f5a;
+      outline-offset: 2px;
+    }
+    button {
+      width: 100%;
+      margin-top: .9rem;
+      padding: .65rem .8rem;
+      font-size: 1rem;
+      font-weight: 600;
+      color: #fff;
+      background: #2f6f5a;
+      border: 0;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    button:hover { filter: brightness(1.08); }
+    .error {
+      margin-top: .9rem;
+      font-size: .85rem;
+      color: #b3261e;
+      min-height: 1.2em;
+    }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <h1>Lesdag Dashboard</h1>
+    <p class="sub">Voer het wachtwoord in om verder te gaan.</p>
+    <form id="gate-form" autocomplete="off">
+      <input type="password" id="gate-password" inputmode="numeric" placeholder="Wachtwoord" autofocus required>
+      <button type="submit">Openen</button>
+      <p class="error" id="gate-error" aria-live="polite"></p>
+    </form>
+  </main>
+
+  <script>
+    // SHA-256 hash of the password, not the password itself, so it isn't
+    // sitting in the page source in plain text.
+    var PASSWORD_HASH = 'd3b35f9aabd2795749aac7cd2c2160060eac3c186316106b93191b95dfe8edeb';
+
+    function toHex(buffer) {
+      return Array.from(new Uint8Array(buffer))
+        .map(function (b) { return b.toString(16).padStart(2, '0'); })
+        .join('');
+    }
+
+    async function sha256(text) {
+      var data = new TextEncoder().encode(text);
+      var digest = await crypto.subtle.digest('SHA-256', data);
+      return toHex(digest);
+    }
+
+    // Already unlocked in this browser? Skip straight to the dashboard.
+    try {
+      if (localStorage.getItem('lesdag_unlocked') === '1') {
+        location.replace('dashboard.html');
+      }
+    } catch (e) {}
+
+    document.getElementById('gate-form').addEventListener('submit', async function (e) {
+      e.preventDefault();
+      var input = document.getElementById('gate-password');
+      var errorEl = document.getElementById('gate-error');
+      errorEl.textContent = '';
+
+      var hash = await sha256(input.value);
+      if (hash === PASSWORD_HASH) {
+        try { localStorage.setItem('lesdag_unlocked', '1'); } catch (err) {}
+        location.href = 'dashboard.html';
+      } else {
+        errorEl.textContent = 'Onjuist wachtwoord, probeer opnieuw.';
+        input.value = '';
+        input.focus();
+      }
+    });
+  </script>
+</body>
+</html>
